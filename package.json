@@ -1,0 +1,30 @@
+{
+  "name": "loop-drop-project",
+  "version": "0.0.0",
+  "description": "Provides scoped object access and persistence layer for Loop Drop objects.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mmckegg/loop-drop-project.git"
+  },
+  "author": "Matt McKegg",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mmckegg/loop-drop-project/issues"
+  },
+  "homepage": "https://github.com/mmckegg/loop-drop-project",
+  "devDependencies": {
+    "browserify-fs": "^1.0.0",
+    "rimraf": "^2.2.8",
+    "tape": "^3.0.0",
+    "web-fs": "^1.2.0"
+  },
+  "dependencies": {
+    "map-async": "^0.1.1",
+    "next-tick": "^0.2.2",
+    "observ": "^0.2.0"
+  }
+}
