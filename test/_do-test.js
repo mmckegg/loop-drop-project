@@ -26,7 +26,6 @@ function doTest(t, fs, root){
     existingProject.load(root, function(err){
       if (err) throw err
 
-      console.log(existingProject.entries())
       t.deepEqual(existingProject.entries(), [
         { "type":"directory",
           "fileName":"setups",

@@ -4,7 +4,7 @@
   "description": "Provides scoped object access and persistence layer for Loop Drop objects.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "tape test/node.js && testling -x open"
   },
   "repository": {
     "type": "git",
@@ -20,11 +20,15 @@
     "browserify-fs": "^1.0.0",
     "rimraf": "^2.2.8",
     "tape": "^3.0.0",
+    "testling": "^1.7.1",
     "web-fs": "^1.2.0"
   },
   "dependencies": {
     "map-async": "^0.1.1",
     "next-tick": "^0.2.2",
     "observ": "^0.2.0"
+  },
+  "testling": {
+    "files": "test/browser.js"
   }
 }
