@@ -1,83 +1,76 @@
 var Project = require('../')
 
 function doTest(t, fs, root){
+
   fs.mkdir(root, function(err){
     if (err) throw err
 
-    var project = Project({fs: fs})
+    var project = Project(fs)
+
+    var rootObs = project.getDirectory('/')
+    var setupsObs = project.getDirectory('/setups')
+
+    var rootChanges = []
+    var setupsChanges = []
+    var fileChanges = []
+    var file2Changes = []
+
+    rootObs(function(data){
+      rootChanges.push(data)
+    })
+
+    setupsObs(function(data){
+      setupsChanges.push(data)
+    })
+
     project.load(root, function(err){
       if (err) throw err
-      t.equal(project.entries().length, 0, 'empty')
-
       project.createDirectory('/setups', function(err){
         if (err) throw err
-
-        project.createFile('/setups/test-1', function(err, file){
-          if (err) throw err
-          file.set('hello')
-        })
-
       })
     })
+
+    setTimeout(function(){
+      var fileObs = project.getFile('/setups/test-1')
+      var fileObs2 = project.getFile('/setups/test-1')
+
+      fileObs2(function(data){
+        file2Changes.push(data)
+      })
+
+      fileObs.set('init')
+
+      fileObs(function(data){
+        fileChanges.push(data)
+      })
+
+      setTimeout(function(){
+        fileObs.set('hello!')
+      }, 300)
+
+      setTimeout(function(){
+        fileObs.set('hello again?')
+      }, 600)
+    }, 300)
+
+    setTimeout(function(){
+      t.equal(rootChanges.length, 2)
+      t.equal(setupsChanges.length, 5)
+
+      t.deepEqual(rootChanges[0],[])
+
+      t.deepEqual(setupsChanges[0],null)
+      t.deepEqual(setupsChanges[1],[])
+
+      t.deepEqual(fileChanges, [ 'hello!', 'hello again?' ])
+      t.deepEqual(file2Changes, [ 'init', 'hello!', 'hello again?' ])
+
+      project.close()
+
+      t.end()
+    }, 1700)
+
   })
-
-  setTimeout(function(){
-    var existingProject = Project({fs: fs})
-    existingProject.load(root, function(err){
-      if (err) throw err
-
-      t.deepEqual(existingProject.entries(), [
-        { "type":"directory",
-          "fileName":"setups",
-          "path":"setups",
-          "entries":[
-            {"type":"file","fileName":"test-1","path":"setups/test-1"}
-          ]
-        }
-      ])
-
-      var changes = []
-      existingProject.entries(function(data){
-        changes.push(data)
-      })
-
-      existingProject.getFile('/setups/test-1', function(err, file1){
-        if (err) throw err
-        t.equal(file1(), 'hello')
-
-        existingProject.createFile('/setups/test-2', function(err, file2){
-          if (err) throw err
-          file2.set('hello again')
-
-          setTimeout(function(){
-            existingProject.list('/setups', function(err, res){
-              t.deepEqual(res, ['setups/test-1', 'setups/test-2'])
-            })
-          }, 20)
-
-          setTimeout(function(){
-            file1.delete()
-          }, 100)
-
-          setTimeout(createAnotherFileAndCheckForChanges, 200)
-        })
-
-      })
-
-      function createAnotherFileAndCheckForChanges(){
-        t.equal(changes.length, 2)
-        t.deepEqual(changes[0][0].entries, [
-          { fileName: "test-1", path: "setups/test-1", type: "file" },
-          { fileName: 'test-2', path: 'setups/test-2', type: 'file' }
-        ])
-        t.deepEqual(changes[1][0].entries, [
-          { fileName: 'test-2', path: 'setups/test-2', type: 'file' }
-        ])
-        t.end()
-      }
-
-    })
-  }, 100)
 
 }
 

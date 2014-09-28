@@ -5,6 +5,8 @@ Provides scoped object access and persistence layer for [Loop Drop](https://gith
 
 See [index.js](https://github.com/mmckegg/loop-drop-project/blob/master/index.js) for method list.
 
+Mostly just a scoped wrapper for [observ-fs](https://github.com/mmckegg/observ-fs).
+
 Tested under the following `fs` implementations:
   - [Node's built in `fs`](http://nodejs.org/api/fs.html)
   - [`level-filesystem`](https://github.com/mafintosh/level-filesystem) (backed by [level-js](https://github.com/maxogden/level.js) in browser)

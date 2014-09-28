@@ -1,87 +1,123 @@
-var Observ = require('observ')
+var ObservDirectory = require('observ-fs/directory')
+var ObservFile = require('observ-fs/file')
 var join = require('path').join
-var list = require('./lib/list.js')
-var listRecursiveEntries = require('./lib/list-recursive-entries.js')
+var map = require('map-async')
 var relative = require('path').relative
+
+var list = require('./lib/list.js')
 
 module.exports = Project
 
-function Project(options){
+function Project(fs){
   // options: fs, decodeAudioData
 
   if (!(this instanceof Project)){
-    return new Project(options)
+    return new Project(fs)
   }
-
-  options = options || {}
 
   this._state = {
     rootDirectory: null,
-    removeFileListeners: [],
-    lookupFileListeners: {},
-    fileCache: {},
-    audioBufferCache: {}
+    openDirectories: [],
+    openFiles: [],
+    fs: fs || null
   }
-
-  this.fs = options.fs
-  this.decodeAudioData = options.decodeAudioData || decodeFallback
-  this.entries = Observ([])
-  this.refreshEntries = _refreshEntries.bind(this)
 }
 
 Project.prototype = {
   
-  load: function(rootDirectory, cb){
-    var state = this._state
+  load: function(rootDirectory, fs, cb){
+    if (typeof fs === 'function') return this.load(rootDirectory, null, fs)
 
-    // release project.getFile handlers
-    state.removeFileListeners.forEach(invoke)
-    state.removeFileListeners = []
-    state.lookupFileListeners = {}
-    state.fileCache = {}
+    var project = this
+    var state = project._state
 
     // clear audio cache
     state.audioBufferCache = {}
 
+    // update fs instance
+    state.fs = fs || state.fs
+
     // update root
+    var oldRoot = state.rootDirectory
     state.rootDirectory = rootDirectory
-    this.refreshEntries(cb)
+    
+    // reload open directories
+    map(state.openDirectories, function(directory, i, next){
+      var path = project.resolve(directory.src)
+      directory.set(path, state.fs, next)
+    }, cb)
+
   },
 
   createDirectory: function(src, cb){
-    var path = this.resolve(src)
-    this.fs.mkdir(path, cb)
-  },
-
-  createFile: function(src, cb){
-    var fs = this.fs
     var project = this
-    var state = this._state
-    var path = this.resolve(src)
+    var state = project._state
+    var path = project.resolve(src)
 
-    state.fileCache[path] = null
-  
-    var data = '\n' // can't store 0 length values in level-fs :(
-      
-    fs.writeFile(path, data, function(err){
+    // force refresh (in case of no watcher)
+    state.fs.mkdir(path, function(err){
       if (err) return cb&&cb(err)
-      project.getFile(src, cb)
-      project.refreshEntries()
+      map(state.openDirectories, function(directory, i, next){
+        if (directory.path === path){
+          directory.refresh(next)
+        } else {
+          next(null)
+        }
+      }, cb)
     })
   },
 
-  getFile: require('./instance/get-file.js'),
-  getAudioBuffer: require('./instance/get-audio-buffer.js'),
+  getDirectory: function(src, cb){
+
+    var project = this
+    var state = project._state
+    var path = state.rootDirectory ? project.resolve(src) : null
+    var fs = state.fs
+
+    var obs = ObservDirectory(path, fs, cb)
+    obs.src = path ? project.relative(path) : join('.', src)
+    state.openDirectories.push(obs)
+    obs.onclose = function(){
+      var index = state.openDirectories.indexOf(obs)
+      if (~index){
+        state.openDirectories.splice(index, 1)
+      }
+    }
+
+    return obs
+  },
+
+  getFile: function(src, encoding, cb){
+    if (typeof encoding === 'function') return this.getFile(src, null, encoding)
+
+    var project = this
+    var state = project._state
+    var path = project.resolve(src)
+    var fs = state.fs
+
+    var obs = ObservFile(path, encoding, fs, cb)
+    obs.src = project.relative(path)
+    state.openFiles.push(obs)
+    obs.onclose = function(){
+      var index = state.openFiles.indexOf(obs)
+      if (~index){
+        state.openFiles.splice(index, 1)
+      }
+    }
+    return obs
+  },
 
   getFileBlob: function(src, cb){
-    var path = this.resolve(src)
-    fs.readFile(path, 'blob', cb)
+    var project = this
+    var state = project._state
+    var path = project.resolve(src)
+    state.fs.readFile(path, 'blob', cb)
   },
 
   list: function(src, cb){
     var state = this._state
     var path = this.resolve(src)
-    list(this.fs, path, function(err, files){
+    list(state.fs, path, function(err, files){
       if(err)return cb&&cb(err)
       cb(null, files.map(function(file){
         return relative(state.rootDirectory, file)
@@ -95,27 +131,22 @@ Project.prototype = {
       throw 'No project active. Use `project.load(rootDirectory)`'
     }
     return join(state.rootDirectory, src)
+  },
+
+  relative: function(path){
+    var state = this._state
+    if (!state.rootDirectory){
+      throw 'No project active. Use `project.load(rootDirectory)`'
+    }
+    return relative(state.rootDirectory, path)
+  },
+
+  close: function(){
+    var state = this._state
+    var openItems = state.openDirectories.concat(state.openFiles)
+    openItems.forEach(function(item){
+      item.close()
+    })
   }
 
-}
-
-function _refreshEntries(cb){
-  var project = this
-  var state = this._state
-
-  listRecursiveEntries(project.fs, state.rootDirectory, state.rootDirectory, function(err, entries){
-    if (err) return cb&&cb(err)
-    project.entries.set(entries)
-    cb&&cb(null)
-  })
-}
-
-function decodeFallback(data, cb){
-  nextTick(function(){
-    cb(null, data)
-  })
-}
-
-function invoke(func){
-  func()
 }
