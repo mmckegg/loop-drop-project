@@ -67,6 +67,9 @@ function doTest(t, fs, root){
 
       project.close()
 
+      t.deepEqual(project._state.openDirectories, [])
+      t.deepEqual(project._state.openFiles, [])
+
       t.end()
     }, 1700)
 

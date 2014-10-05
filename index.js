@@ -77,12 +77,12 @@ Project.prototype = {
     var obs = ObservDirectory(path, fs, cb)
     obs.src = path ? project.relative(path) : join('.', src)
     state.openDirectories.push(obs)
-    obs.onclose = function(){
+    obs.onClose(function(){
       var index = state.openDirectories.indexOf(obs)
       if (~index){
         state.openDirectories.splice(index, 1)
       }
-    }
+    })
 
     return obs
   },
@@ -98,12 +98,12 @@ Project.prototype = {
     var obs = ObservFile(path, encoding, fs, cb)
     obs.src = project.relative(path)
     state.openFiles.push(obs)
-    obs.onclose = function(){
+    obs.onClose(function(){
       var index = state.openFiles.indexOf(obs)
       if (~index){
         state.openFiles.splice(index, 1)
       }
-    }
+    })
     return obs
   },
 
