@@ -107,6 +107,19 @@ Project.prototype = {
     return obs
   },
 
+  checkExists: function(src, cb){
+    var state = this._state
+    var fs = state.fs
+    var path = this.resolve(src)
+    fs.stat(path, function(err, stats){
+      if (stats){
+        cb(null, true)
+      } else {
+        cb(null, false)
+      }
+    })
+  },
+
   getFileBlob: function(src, cb){
     var project = this
     var state = project._state
