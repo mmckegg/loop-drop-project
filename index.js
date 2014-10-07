@@ -3,6 +3,8 @@ var ObservFile = require('observ-fs/file')
 var join = require('path').join
 var map = require('map-async')
 var relative = require('path').relative
+var getBaseName = require('path').basename
+var getDirName = require('path').dirname
 
 var list = require('./lib/list.js')
 
@@ -96,8 +98,10 @@ Project.prototype = {
     var fs = state.fs
 
     var obs = ObservFile(path, encoding, fs, cb)
+
     obs.src = project.relative(path)
     state.openFiles.push(obs)
+
     obs.onClose(function(){
       var index = state.openFiles.indexOf(obs)
       if (~index){
@@ -152,6 +156,32 @@ Project.prototype = {
       throw 'No project active. Use `project.load(rootDirectory)`'
     }
     return relative(state.rootDirectory, path)
+  },
+
+  backup: function(file, cb){
+    var project = this
+    var state = project._state
+    var fs = state.fs
+    var path = file.path
+    var src = file.path
+
+    var backupDirectory = join(getDirName(path), 'backup')
+    var backupFile = join(backupDirectory, getBaseName(path))
+
+    fs.stat(backupDirectory, function(err, stats){
+      if (err){
+        fs.mkdir(backupDirectory, doBackup)
+      } else if (stats.isDirectory()){
+        doBackup()
+      } else {
+        cb&&cb('unknown file type')
+      }
+    })
+
+    function doBackup(){
+      fs.writeFile(backupFile, file(), cb)
+    }
+
   },
 
   close: function(){
