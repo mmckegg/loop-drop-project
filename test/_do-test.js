@@ -31,6 +31,21 @@ function doTest(t, fs, root){
     })
 
     setTimeout(function(){
+
+      project.resolveAvailable('setups/file.txt', function(err, availableName){
+        t.equal(availableName, 'setups/file.txt')
+        project.getFile(availableName, function(){
+          project.resolveAvailable(availableName, function(err, availableName){
+            t.equal(availableName, 'setups/file 1.txt')
+            project.getFile(availableName, function(){
+              project.resolveAvailable(availableName, function(err, availableName){
+                t.equal(availableName, 'setups/file 2.txt')
+              })
+            })
+          })
+        })
+      })
+
       var fileObs = project.getFile('/setups/test-1')
       var fileObs2 = project.getFile('/setups/test-1')
 

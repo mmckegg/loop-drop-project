@@ -5,6 +5,7 @@ var map = require('map-async')
 var relative = require('path').relative
 var getBaseName = require('path').basename
 var getDirName = require('path').dirname
+var getExt = require('path').extname
 
 var list = require('./lib/list.js')
 
@@ -124,11 +125,47 @@ Project.prototype = {
     })
   },
 
+  resolveAvailable: function(src, cb){
+
+    // check if file exists, 
+    // if so increment number and try again, 
+    // otherwise return src
+
+    var project = this
+    var ext = getExt(src)
+    var base = getBaseName(src, ext)
+    var dir = getDirName(src)
+    var numberMatch = /(^.+) ([0-9]+)$/.exec(base)
+
+    project.checkExists(src, function(err, exists){
+      if (err) return cb&&cb(err)
+      if (exists){
+        if (numberMatch){
+          var number = parseInt(numberMatch[2]) + 1
+          var fileName = numberMatch[1] + ' ' + number + ext
+          project.resolveAvailable(join(dir, fileName), cb)
+        } else {
+          var fileName = base + ' 1' + ext
+          project.resolveAvailable(join(dir, fileName), cb)
+        }
+      } else {
+        cb(null, src)
+      }
+    })
+  },
+
   getFileBlob: function(src, cb){
     var project = this
     var state = project._state
     var path = project.resolve(src)
     state.fs.readFile(path, 'blob', cb)
+  },
+
+  writeFileBlob: function(src, file, cb){
+    var project = this
+    var state = project._state
+    var path = project.resolve(src)
+    state.fs.writeFile(path, file, cb)
   },
 
   list: function(src, cb){
