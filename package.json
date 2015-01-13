@@ -1,6 +1,6 @@
 {
   "name": "loop-drop-project",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Provides scoped object access and persistence layer for Loop Drop objects.",
   "main": "index.js",
   "scripts": {
@@ -31,6 +31,9 @@
     "observ-fs": "^1.4.0"
   },
   "testling": {
-    "files": ["test/browser.js", "test/test-audio-buffer.js"]
+    "files": [
+      "test/browser.js",
+      "test/test-audio-buffer.js"
+    ]
   }
 }
