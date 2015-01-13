@@ -1,6 +1,6 @@
 {
   "name": "loop-drop-project",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "Provides scoped object access and persistence layer for Loop Drop objects.",
   "main": "index.js",
   "scripts": {
