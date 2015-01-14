@@ -4,7 +4,7 @@
   "description": "Provides scoped object access and persistence layer for Loop Drop objects.",
   "main": "index.js",
   "scripts": {
-    "test": "tape test/node.js && testling -x open"
+    "test": "faucet test/node.js test/test-file-object.js && testling -x open | faucet"
   },
   "repository": {
     "type": "git",
@@ -18,22 +18,27 @@
   "homepage": "https://github.com/mmckegg/loop-drop-project",
   "devDependencies": {
     "browserify-fs": "^1.0.0",
+    "faucet": "0.0.1",
+    "observ-struct": "^6.0.0",
     "rimraf": "^2.2.8",
     "tape": "^3.0.0",
     "testling": "^1.7.1",
     "web-fs": "^1.2.0"
   },
   "dependencies": {
+    "deep-equal": "^0.2.1",
     "geval": "^2.1.1",
     "map-async": "^0.1.1",
     "next-tick": "^0.2.2",
     "observ": "^0.2.0",
-    "observ-fs": "^1.4.0"
+    "observ-fs": "^1.4.0",
+    "observ-node-array": "^1.0.0",
+    "xtend": "^4.0.0"
   },
   "testling": {
     "files": [
       "test/browser.js",
-      "test/test-audio-buffer.js"
+      "test/test-*.js"
     ]
   }
 }
