@@ -3,7 +3,7 @@ var Observ = require('observ')
 var ObservAudioBuffer = require('../audio-buffer.js')
 var path = require('path')
 
-test(function(t){
+test('ObservAudioBuffer', function(t){
 
   var audioContext = new AudioContext()
   var projectEvents = []
