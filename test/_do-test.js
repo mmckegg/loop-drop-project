@@ -7,8 +7,8 @@ function doTest(t, fs, root){
 
     var project = Project(fs)
 
-    var rootObs = project.getDirectory('/')
-    var setupsObs = project.getDirectory('/setups')
+    var rootObs = project.getDirectory('.')
+    var setupsObs = project.getDirectory('setups')
 
     var rootChanges = []
     var setupsChanges = []
@@ -25,7 +25,7 @@ function doTest(t, fs, root){
 
     project.load(root, function(err){
       if (err) throw err
-      project.createDirectory('/setups', function(err){
+      project.createDirectory('setups', function(err){
         if (err) throw err
       })
     })
@@ -46,8 +46,8 @@ function doTest(t, fs, root){
         })
       })
 
-      var fileObs = project.getFile('/setups/test-1')
-      var fileObs2 = project.getFile('/setups/test-1')
+      var fileObs = project.getFile('setups/test-1')
+      var fileObs2 = project.getFile('setups/test-1')
 
       fileObs2(function(data){
         file2Changes.push(data)

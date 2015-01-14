@@ -1,5 +1,6 @@
 var ObservDirectory = require('observ-fs/directory')
 var ObservFile = require('observ-fs/file')
+var resolve = require('path').resolve
 var join = require('path').join
 var map = require('map-async')
 var relative = require('path').relative
@@ -184,7 +185,7 @@ Project.prototype = {
     if (!state.rootDirectory){
       throw 'No project active. Use `project.load(rootDirectory)`'
     }
-    return join(state.rootDirectory, src)
+    return resolve.apply(this, [state.rootDirectory].concat(src))
   },
 
   relative: function(path){
