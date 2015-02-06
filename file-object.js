@@ -199,7 +199,7 @@ function JsonFile(file){
   var removeWatcher = watch(file, function(data){
     if (lastSaved !== data){
       lastSaved = data
-      data = JSON.parse(data||'{}')
+      data = JSON.parse(data&&data.trim()||'{}')
       currentTransaction = data
       obs.set(data)
       currentTransaction = NO_TRANSACTION
