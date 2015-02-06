@@ -27,21 +27,38 @@ function FileObject(parentContext){
   var releaseFile = null
   var releaseInstance = null
   var releaseResolved = null
+  var releaseClose = null
   var currentTransaction = NO_TRANSACTION
 
   var lastData = {}
   obs.node = null
 
   obs(function(data){
-
     if (parsedFile && data === parsedFile()){
-      // push update from file to object
+      updateNode(data)
+    } else if (parsedFile && data !== parsedFile()){
+      // push update to file
 
+      if (getNode(lastData) !== getNode(data)){
+        updateNode(data)
+      }
+
+      parsedFile.set(data)
+    }
+  })
+
+  var broadcastClose = null
+  obs.onClose = Event(function(broadcast){
+    broadcastClose = broadcast
+  })
+
+  function updateNode(data){
+    if (data !== lastData){
       var oldNode = getNode(lastData)
       var newNode = getNode(data)
       var instance = obs.node
       var oldInstance = instance
-     
+      
       if (oldNode !== newNode){
         var ctor = resolveNode(context.nodes, newNode)
 
@@ -85,19 +102,8 @@ function FileObject(parentContext){
         loading = false
         broadcastLoaded() // hacky callback for onLoad
       }
-
-    } else if (parsedFile && data !== parsedFile()){
-      // push update to file
-
-      var lastNode = getNode(lastData)
-      if (lastNode){
-        data[context.nodeKey||'node'] = lastNode
-      }
-
-      parsedFile.set(data)
-
     }
-  })
+  }
 
   var broadcastLoaded = null
   obs.onLoad = Event(function(broadcast){
@@ -121,11 +127,17 @@ function FileObject(parentContext){
   }
 
   obs.load = function(src){
+
+    releaseClose&&releaseClose()
+
     if (src){
       loading = true
       obs.file = context.project.getFile(src)
       obs.path = obs.file.path
       context.cwd = getDirName(obs.file.path)
+
+      releaseClose = obs.file.onClose(onClose)
+
       switchTo(JsonFile(obs.file))
     } else {
       obs.file = null
@@ -133,36 +145,22 @@ function FileObject(parentContext){
     }
   }
 
-  obs.rename = function(newFileName){
-    if (obs.file){
-      var oldFile = obs.file
-      var currentFileName = getBaseName(obs.file.path)
-      if (newFileName !== currentFileName){
-        var directory = getDirName(obs.file.path)
-        var newPath = join(directory, newFileName)
-        
-        var src = context.project.relative(newPath)
-        obs.file = context.project.getFile(src)
-        obs.file.set(obs.file())
-        obs.path = obs.file.path
-
-        switchTo(JsonFile(obs.file))
-        oldFile.delete()
-      }
+  obs.close = function(){
+    if (obs.file&&obs.file.close){
+      obs.file.close()
     }
   }
 
-  obs.onClose = Event(function(broadcast){
-    obs.close = broadcast
-  })
-
-  obs.onClose(function(){
+  function onClose(){
+    releaseClose&&releaseClose()
     releaseResolved&&releaseResolved()
     releaseInstance&&releaseInstance()
     obs.node && obs.node.destroy && obs.node.destroy()
     obs.node = releaseInstance = releaseResolved = null
+    obs.file = null
     switchTo(null)
-  })
+    broadcastClose()
+  }
 
   return obs
 
@@ -181,7 +179,7 @@ function FileObject(parentContext){
 
     if (target){
       parsedFile = target
-      releaseFile = watch(target, obs.set)
+      releaseFile = target() ? watch(target, obs.set) : target(obs.set)
     } else {
       obs.set(null)
     }
