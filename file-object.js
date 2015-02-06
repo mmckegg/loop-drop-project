@@ -26,6 +26,7 @@ function FileObject(parentContext){
   var loading = false
   var releaseFile = null
   var releaseInstance = null
+  var releaseResolved = null
   var currentTransaction = NO_TRANSACTION
 
   var lastData = {}
@@ -45,15 +46,20 @@ function FileObject(parentContext){
         var ctor = resolveNode(context.nodes, newNode)
 
         if (instance){
+          releaseResolved()
           releaseInstance()
           instance.destroy && instance.destroy()
-          instance = null
-          obs.resolveNode = null
+          releaseResolved = releaseInstance = instance = obs.node = null
         }
 
         if (ctor){
           instance = obs.node = ctor(context)
           instance.nodeName = newNode
+
+          releaseResolved = instance.resolved ? 
+            instance.resolved(obs.resolved.set) :
+            instance(obs.resolved.set)
+     
           releaseInstance = instance(function(data){
             if (currentTransaction === NO_TRANSACTION){
               obs.set(data)
@@ -61,6 +67,7 @@ function FileObject(parentContext){
           })
           broadcastNode(instance)
         } else if (oldInstance){
+          obs.resolved.set(null)
           broadcastNode(null)
         }
 
@@ -101,6 +108,8 @@ function FileObject(parentContext){
   obs.onNode = Event(function(broadcast){
     broadcastNode = broadcast
   })
+
+  obs.resolved = Observ()
 
   obs.resolvePath = function(src){
     return context.project.resolve([context.cwd||'', src])
@@ -148,9 +157,10 @@ function FileObject(parentContext){
   })
 
   obs.onClose(function(){
+    releaseResolved&&releaseResolved()
     releaseInstance&&releaseInstance()
     obs.node && obs.node.destroy && obs.node.destroy()
-    obs.node = null
+    obs.node = releaseInstance = releaseResolved = null
     switchTo(null)
   })
 
