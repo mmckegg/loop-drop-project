@@ -18,6 +18,9 @@ function FileObject(parentContext){
   var obs = Observ({})
   obs.file = null
 
+  // add self to context
+  context.fileObject = obs
+
   var parsedFile = null
 
   var loading = false
