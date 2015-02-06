@@ -106,7 +106,7 @@ function External(context){
 
 function computedJsonObject(obs){
   return computed([obs], function(a){
-    return JSON.parse(a)
+    return JSON.parse(a&&a.trim()||'{}')
   })
 }
 
