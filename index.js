@@ -91,6 +91,24 @@ Project.prototype = {
     return obs
   },
 
+  deleteEntry: function(src, cb){
+    var state = this._state
+    var fs = state.fs
+    var path = this.resolve(src)
+    fs.stat(path, function(err, stats){
+      if (err) return cb&&cb(err)
+      rimraf(path, fs, cb)
+    })
+  },
+
+  moveEntry: function(fromSrc, toSrc, cb){
+    var state = this._state
+    var fs = state.fs
+    var fromPath = this.resolve(fromSrc)
+    var toPath = this.resolve(toSrc)
+    fs.rename(fromPath, toPath, cb)
+  },
+
   getFile: function(src, encoding, cb){
     if (typeof encoding === 'function') return this.getFile(src, null, encoding)
 
@@ -230,4 +248,36 @@ Project.prototype = {
     })
   }
 
+}
+
+function rimraf(path, fs, cb){
+  fs.unlink(path, function(err){
+    if (!err) return cb&&cb()
+    fs.rmdir(path, function(err){
+      if (!err) return cb&&cb()
+      fs.readdir(path, function(err, entries){
+        if (err) return cb&&cb(err)
+        forEach(entries, function(file, next){
+          rimraf(join(path, file), fs, next)
+        }, function(err){
+          if (err) return cb&&cb(err)
+          fs.rmdir(path, cb)
+        })
+      })
+    })
+  })
+}
+
+function forEach(array, fn, cb){
+  var i = -1
+  function next(err){
+    if (err) return cb&&cb(err)
+    i += 1
+    if (i<array.length){
+      fn(array[i], next, i)
+    } else {
+      cb&&cb(null)
+    }
+  }
+  next()
 }
