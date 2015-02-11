@@ -10,6 +10,7 @@ module.exports = External
 
 function External(context){  
   var node = Observ({})
+  node.context = context
 
   var additionalParams = getAdditional(node)
   var externalParams = null
