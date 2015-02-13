@@ -5,6 +5,7 @@ var watch = require('observ/watch')
 var Event = require('geval')
 var nextTick = require('next-tick')
 var resolveNode = require('observ-node-array/resolve')
+var getDirectory = require('path').dirname
 
 module.exports = External
 
@@ -17,6 +18,8 @@ function External(context){
 
   var release = null
   var releaseCC = null
+
+  var innerContext = Object.create(context)
 
   var lastDescriptor = null
   node.inner = null
@@ -87,6 +90,7 @@ function External(context){
       node.inner = null
 
       if (descriptor && ctor){
+        context.cwd = getDirectory(node.file.path)
         node.inner = ctor(context)
         node.inner.nodeName = descriptor.node
         node.inner.set(descriptor)
