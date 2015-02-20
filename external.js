@@ -6,31 +6,50 @@ var Event = require('geval')
 var nextTick = require('next-tick')
 var resolveNode = require('observ-node-array/resolve')
 var getDirectory = require('path').dirname
+var relative = require('path').relative
 
 module.exports = External
 
-function External(context){  
-  var node = Observ({})
-  node.context = context
+function External(parentContext){  
 
-  var additionalParams = getAdditional(node)
+  var context = Object.create(parentContext)
+
+  var obs = Observ({})
+  obs.context = context
+  context.fileObject = obs
+
+  var additionalParams = getAdditional(obs)
   var externalParams = null
 
   var release = null
   var releaseCC = null
 
-  var innerContext = Object.create(context)
+  var nodeContext = Object.create(context)
 
   var lastDescriptor = null
-  node.inner = null
-  node.file = null
-  node.controllerContext = Observ()
-  node.resolved = Observ()
+  obs.node = null
+  obs.file = null
+  obs.controllerContext = Observ()
+  obs.resolved = Observ()
 
-  node.destroy = function(){
-    if (node.inner && node.inner.destroy){
-      node.inner.destroy()
-      node.inner = null
+  obs.resolvePath = function(src){
+    return context.project.resolve([context.cwd||'', src])
+  }
+
+  obs.relative = function(path){
+    var currentDir = context.project.resolve([context.cwd])
+    var value = relative(currentDir, path)
+    if (/^\./.exec(value)){
+      return value
+    } else {
+      return './' + value
+    }
+  }
+
+  obs.destroy = function(){
+    if (obs.node && obs.node.destroy){
+      obs.node.destroy()
+      obs.node = null
     }
 
     if (release){
@@ -41,12 +60,12 @@ function External(context){
 
   }
 
-  watch(node, function(descriptor){
+  watch(obs, function(descriptor){
     if (externalParams && externalParams.src != descriptor.src){
       release()
       release = null
       externalParams = null
-      node.file = null
+      obs.file = null
     }
 
     if (!externalParams){
@@ -54,8 +73,8 @@ function External(context){
         context.project.checkExists([context.cwd||'', descriptor.src], function(err, exists){
           if (exists){
             release&&release()
-            node.file = context.project.getFile([context.cwd||'', descriptor.src])
-            externalParams = computedJsonObject(node.file)
+            obs.file = context.project.getFile([context.cwd||'', descriptor.src])
+            externalParams = computedJsonObject(obs.file)
             externalParams.src = descriptor.src
             release = watch(externalParams, update)
           }
@@ -71,42 +90,42 @@ function External(context){
     var ctor = descriptor && resolveNode(context.nodes, descriptor.node)
 
 
-    if (node.inner && descriptor && node && lastDescriptor && descriptor.node == lastDescriptor.node){
-      node.inner.set(descriptor)
-      node.resolved.set(descriptor)
+    if (obs.node && descriptor && obs && lastDescriptor && descriptor.node == lastDescriptor.node){
+      obs.node.set(descriptor)
+      obs.resolved.set(descriptor)
     } else {
 
-      if (node.inner && node.inner.destroy){
-        node.inner.destroy()
+      if (obs.node && obs.node.destroy){
+        obs.node.destroy()
 
         if (releaseCC){
           releaseCC()
           releaseCC = null
-          node.controllerContext.set(null)
-          node.resolved.set(null)
+          obs.controllerContext.set(null)
+          obs.resolved.set(null)
         }
       }
 
-      node.inner = null
+      obs.node = null
 
       if (descriptor && ctor){
-        context.cwd = getDirectory(node.file.path)
-        node.inner = ctor(context)
-        node.inner.nodeName = descriptor.node
-        node.inner.set(descriptor)
+        context.cwd = getDirectory(obs.file.path)
+        obs.node = ctor(context)
+        obs.node.nodeName = descriptor.node
+        obs.node.set(descriptor)
 
-        if (node.inner.controllerContext){
-          releaseCC = watch(node.inner.controllerContext, node.controllerContext.set)
+        if (obs.node.controllerContext){
+          releaseCC = watch(obs.node.controllerContext, obs.controllerContext.set)
         }
 
-        node.resolved.set(descriptor)
+        obs.resolved.set(descriptor)
       }
     }
 
     lastDescriptor = descriptor 
   }
 
-  return node
+  return obs
 }
 
 function computedJsonObject(obs){
