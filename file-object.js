@@ -123,7 +123,12 @@ function FileObject(parentContext){
 
   obs.relative = function(path){
     var currentDir = context.project.resolve([context.cwd])
-    return relative(currentDir, path)
+    var value = relative(currentDir, path)
+    if (/^\./.exec(value)){
+      return value
+    } else {
+      return './' + value
+    }
   }
 
   obs.load = function(src){
