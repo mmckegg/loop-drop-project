@@ -18,6 +18,8 @@ function External(parentContext){
   obs.context = context
   context.fileObject = obs
 
+  obs._type = 'ExternalNode'
+
   var additionalParams = getAdditional(obs)
   var externalParams = null
 
