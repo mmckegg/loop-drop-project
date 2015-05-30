@@ -108,6 +108,20 @@ Project.prototype = {
     var toPath = this.resolve(toSrc)
     fs.rename(fromPath, toPath, cb)
   },
+  
+  copyEntry: function(fromSrc, toSrc, cb) {
+    var project = this
+    var fromPath = project.resolve(fromSrc)
+    var toPath = project.resolve(toSrc)
+    var state = project._state
+
+    var stream = state.fs.createReadStream(fromPath).pipe(state.fs.createWriteStream(toPath))
+    
+    if (cb) {
+      stream.on('finish', cb)
+      stream.on('error', cb)
+    }
+  },
 
   getFile: function(src, encoding, cb){
     if (typeof encoding === 'function') return this.getFile(src, null, encoding)
