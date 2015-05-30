@@ -59,7 +59,13 @@ function External(parentContext){
       release = null
       externalParams = null
     }
+  }
 
+  obs.getPath = function() {
+    var descriptor = obs()
+    if (descriptor && descriptor.src) {
+      return obs.resolvePath(descriptor.src)
+    }
   }
 
   watch(obs, function(descriptor){
