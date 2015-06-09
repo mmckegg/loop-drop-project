@@ -2,10 +2,11 @@ var jsonQuery = require('json-query')
 
 module.exports = QueryParam
 
-function QueryParam(target, query){
-  if (!(this instanceof QueryParam)) return new QueryParam(target, query)
+function QueryParam(target, query, defaultValue){
+  if (!(this instanceof QueryParam)) return new QueryParam(target, query, defaultValue)
   this.target = target
   this.query = query
+  this.defaultValue = defaultValue
   this.context = target.context || context
 }
 
@@ -14,7 +15,7 @@ QueryParam.prototype.type = 'QueryParam'
 QueryParam.prototype.write = QueryParam.prototype.set =function(value){
   var newObject = obtain(read(this.target))
   
-  var res = jsonQuery(this.query, {data: newObject})
+  var res = jsonQuery(this.query, {data: newObject, force: this.defaultValue})
   var obj = jsonQuery.lastParent(res)
 
   if (obj){
@@ -37,7 +38,7 @@ QueryParam.prototype.read = function(){
   res = res.value === undefined && this.target.node ?
     jsonQuery(this.query, {data: read(this.target.node)}) : res
 
-  return res.value
+  return res.value === undefined ? this.defaultValue : res.value
 }
 
 function obtain(obj){
