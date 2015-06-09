@@ -7,13 +7,14 @@ var relative = require('path').relative
 var getBaseName = require('path').basename
 var getDirName = require('path').dirname
 var getExt = require('path').extname
+var ReadableBlobStream = require('./lib/readable-blob-stream')
 
 var list = require('./lib/list.js')
 
 module.exports = Project
 
 function Project(fs){
-  // options: fs, decodeAudioData
+  // options: fs
 
   if (!(this instanceof Project)){
     return new Project(fs)
@@ -198,7 +199,16 @@ Project.prototype = {
     var project = this
     var state = project._state
     var path = project.resolve(src)
-    state.fs.writeFile(path, file, cb)
+
+    if (Buffer.isBuffer(file)) {
+      state.fs.writeFile(path, file, cb)
+    } else if (file instanceof Blob) {
+      var stream = new ReadableBlobStream(file).pipe(state.fs.createWriteStream(path))
+      if (cb) {
+        stream.on('finish', cb)
+        stream.on('error', cb)
+      }
+    }
   },
 
   list: function(src, cb){
@@ -294,4 +304,12 @@ function forEach(array, fn, cb){
     }
   }
   next()
+}
+
+function toBuffer(array) {
+  if (Buffer.isBuffer(array)) {
+    return array
+  } else if (array instanceof Blob) {
+
+  }
 }
