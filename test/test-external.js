@@ -102,7 +102,7 @@ test('ObservExternal', function(t){
     setTimeout(function(){ // wait for externals to load
 
       var external = fileObject.node.chunks.get(0)
-      var chunk = external.inner
+      var chunk = external.node
 
       t.deepEqual(external.resolved(), {
         node: 'chunk',
@@ -132,7 +132,7 @@ test('ObservExternal', function(t){
 
       external.set({node: 'external', overrideValue: 'value', src: './chunk2.json'})
       setTimeout(function(){
-        t.deepEqual(external.inner(), {node: 'chunk', value: 'different', overrideValue: 'value'})
+        t.deepEqual(external.node(), {node: 'chunk', value: 'different', overrideValue: 'value'})
         t.end()
       }, 10)
 

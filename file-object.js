@@ -7,6 +7,9 @@ var relative = require('path').relative
 var Observ = require('observ')
 var Event = require('geval')
 var watch = require('observ/watch')
+
+var JsonFile = require('./json-file')
+
 var NO_TRANSACTION = {}
 
 module.exports = FileObject
@@ -194,36 +197,4 @@ function FileObject(parentContext){
     return value && value[context.nodeKey||'node'] || null
   }
 
-}
-
-function JsonFile(file){
-  var obs = Observ()
-  var lastSaved = null
-  var currentTransaction = NO_TRANSACTION
-
-  var removeWatcher = watch(file, function(data){
-    if (lastSaved !== data){
-      lastSaved = data
-      data = JSON.parse(data&&data.trim()||'{}')
-      currentTransaction = data
-      obs.set(data)
-      currentTransaction = NO_TRANSACTION
-    }
-  })
-
-  var removeListener = obs(function(data){
-    if (data !== currentTransaction){
-      lastSaved = JSON.stringify(data)
-      file.set(lastSaved)
-    }
-  })
-
-  obs.destroy = function(){
-    removeListener()
-    removeWatcher()
-    file.close()
-    obs.set(null)
-  }
-
-  return obs
 }

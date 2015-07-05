@@ -8,6 +8,8 @@ var resolveNode = require('observ-node-array/resolve')
 var getDirectory = require('path').dirname
 var relative = require('path').relative
 
+var JsonFile = require('./json-file')
+
 module.exports = External
 
 function External(parentContext){  
@@ -54,6 +56,11 @@ function External(parentContext){
       obs.node = null
     }
 
+    if (obs.file) {
+      obs.file.close()
+      obs.file = null
+    }
+
     if (release){
       release()
       release = null
@@ -73,7 +80,10 @@ function External(parentContext){
       release()
       release = null
       externalParams = null
-      obs.file = null
+      if (obs.file) {
+        obs.file.close()
+        obs.file = null
+      }
     }
 
     if (!externalParams){
@@ -82,7 +92,7 @@ function External(parentContext){
           if (exists){
             release&&release()
             obs.file = context.project.getFile([context.cwd||'', descriptor.src])
-            externalParams = computedJsonObject(obs.file)
+            externalParams = JsonFile(obs.file)
             externalParams.src = descriptor.src
             release = watch(externalParams, update)
           }
@@ -134,12 +144,6 @@ function External(parentContext){
   }
 
   return obs
-}
-
-function computedJsonObject(obs){
-  return computed([obs], function(a){
-    return JSON.parse(a&&a.trim()||'{}')
-  })
 }
 
 function getAdditional(obs){
