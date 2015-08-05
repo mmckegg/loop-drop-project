@@ -2,16 +2,14 @@ var Observ = require('observ')
 var watch = require('observ/watch')
 var Event = require('geval')
 
-var sampleCache = {}
+module.exports = ObservLdjFile
+var cache = {}
 
-module.exports = ObservAudioBuffer
-
-function ObservAudioBuffer(context){
+function ObservLdjFile(context){
   var obs = Observ({})
   obs.resolved = Observ()
 
   var releaseResolved = null
-  var cache = sampleCache[context.audio.sampleRate] = sampleCache[context.audio.sampleRate] || {}
   var lastSrc = null
 
   var removeListener = obs(function(data){
@@ -29,8 +27,8 @@ function ObservAudioBuffer(context){
       var resolvedSrc = context.project.relative(path)
       context.project.checkExists(resolvedSrc, function(err, exists){
         if (exists){
-          var file = context.project.getFile(resolvedSrc, 'arraybuffer')
-          var parsedFile = computedAudioBuffer(context.audio, file)
+          var file = context.project.getFile(resolvedSrc)
+          var parsedFile = computedLdj(file)
           parsedFile.onReleaseAll(function(){ 
             file.close(); delete cache[path] 
           })
@@ -65,9 +63,8 @@ function ObservAudioBuffer(context){
   return obs
 }
 
-
-function computedAudioBuffer(audioContext, file){
-  var value = null
+function computedLdj(file){
+  var value = []
   var listeners = []
   var broadcastReleased = null
 
@@ -78,15 +75,13 @@ function computedAudioBuffer(audioContext, file){
     }
   }
 
-  watch(file, function(buffer){
-    if (buffer){
-      audioContext.decodeAudioData(buffer, function(audioBuffer) {
-        set(audioBuffer)
-      }, function(err){
-        set(null)
-      })
+  watch(file, function(data){
+    data = data && data.trim() || null
+    if (data){
+      var result = JSON.parse('[' + data.replace(/\n/g, ',') + ']')
+      set(result)
     } else {
-      set(null)
+      set([])
     }
   })
 
