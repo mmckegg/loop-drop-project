@@ -72,6 +72,18 @@ Project.prototype = {
     })
   },
 
+  ensureDirectory: function(src, cb) {
+    var project = this
+    project.checkExists(src, function (err, exists) {
+      if (err) return cb && cb(err)
+      if (!exists) {
+        project.createDirectory(src, cb)
+      } else {
+        cb()
+      }
+    })
+  },
+
   getDirectory: function(src, cb){
 
     var project = this
